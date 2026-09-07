@@ -1,0 +1,217 @@
+---
+title: Video Encoder Demo
+description: Capture the LGS1920 contemplation hero video frame by frame and rebuild it through the local encoder API.
+---
+<!doctype html>
+<html lang="en" class="wa-theme-lgs1920 wa-brand-yellow wa-dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="{{ description }}">
+    <title>{{ title }}</title>
+    <link rel="icon" type="image/svg+xml" href="assets/lgs1920-encoder-icon.svg">
+    <link rel="stylesheet" href="assets/app.css">
+    <script type="module" src="assets/app.js"></script>
+</head>
+<body>
+<wa-page class="demo-page" mobile-breakpoint="960">
+    <header slot="header" class="topbar demo-topbar wa-split">
+        <div class="brand-group wa-cluster wa-gap-s">
+            <a class="studio-brand" href="https://lgs1920.fr" target="_blank" rel="external noopener noreferrer" aria-label="Open LGS1920 website">
+                <img class="studio-logo" src="assets/lgs1920-studio.png" alt="LGS1920 Studio">
+            </a>
+            <span class="brand-separator" aria-hidden="true"></span>
+            <a class="brand demo-brand" href="https://lgs1920.fr" target="_blank" rel="external noopener noreferrer" aria-label="Open LGS1920 website">
+                <span class="brand-lockup wa-stack wa-gap-3xs">
+                    <strong>Video Encoder Demo</strong>
+                </span>
+            </a>
+        </div>
+        <div class="wa-cluster wa-gap-s wa-align-items-center">
+            <wa-badge id="encoder-status" variant="neutral">Encoder: checking</wa-badge>
+        </div>
+    </header>
+
+    <main>
+        <div class="demo-content wa-stack wa-gap-xl">
+            <section class="demo-hero wa-stack wa-gap-s">
+                <p id="demo-kicker" class="eyebrow">CONTEMPLATION FRAME DEMO</p>
+                <h1 id="demo-heading">Video Encoder Demo</h1>
+                <p id="demo-description">We seek through the contemplation hero video, send each captured frame to the local encoder, and play the reconstructed MP4 at real speed when the API finishes.</p>
+            </section>
+
+            <section id="unicorn-frame-demo" class="unicorn-demo" aria-labelledby="unicorn-demo-title">
+                <wa-card class="unicorn-card">
+                    <div class="unicorn-heading wa-stack wa-gap-xs">
+                        <p class="eyebrow">FRAME API · CARTOON STORY</p>
+                        <h2 id="unicorn-demo-title">The moonlit unicorn</h2>
+                        <p class="hero-copy">A little unicorn leaves the meadow, follows a falling star, crosses a rainbow, and reaches the moonlit castle. The story is generated frame by frame for 20 seconds.</p>
+                    </div>
+                    <div class="unicorn-controls wa-cluster wa-gap-m wa-align-items-end">
+                        <wa-select id="frame-api-format" label="Frame image format" value="png">
+                            <wa-option value="png">PNG</wa-option>
+                            <wa-option value="jpeg">JPEG</wa-option>
+                        </wa-select>
+                        <wa-select id="frame-api-rate" label="Frame rate" value="30">
+                            <wa-option value="2">2 fps · 40 frames</wa-option>
+                            <wa-option value="5">5 fps · 100 frames</wa-option>
+                            <wa-option value="10">10 fps · 200 frames</wa-option>
+                            <wa-option value="15">15 fps · 300 frames</wa-option>
+                            <wa-option value="30">30 fps · 600 frames</wa-option>
+                            <wa-option value="60">60 fps · 1200 frames</wa-option>
+                        </wa-select>
+                        <wa-button id="run-frame-api-button" variant="neutral" appearance="outlined" disabled>
+                            <wa-icon slot="start" name="images"></wa-icon>
+                            Generate frames
+                        </wa-button>
+                        <wa-button id="encode-frame-api-button" variant="brand" disabled>
+                            <wa-icon slot="start" name="play"></wa-icon>
+                            Encode prepared frames
+                        </wa-button>
+                        <wa-button id="stop-frame-api-button" variant="neutral" appearance="outlined" disabled>
+                            <wa-icon slot="start" name="stop"></wa-icon>
+                            Stop
+                        </wa-button>
+                        <wa-button id="frame-gallery-button" variant="neutral" appearance="outlined">
+                            <wa-icon slot="start" name="images"></wa-icon>
+                            <span id="frame-gallery-label">View frames</span>
+                        </wa-button>
+                    </div>
+                    <div class="unicorn-status wa-stack wa-gap-xs">
+                        <div class="wa-cluster wa-gap-s wa-align-items-center">
+                            <wa-badge id="frame-api-status" variant="neutral">Ready</wa-badge>
+                            <span id="frame-api-job-id" class="field-message">No frame job yet</span>
+                        </div>
+                        <wa-progress-bar id="frame-api-progress" value="0" label="Unicorn frame progress">0%</wa-progress-bar>
+                        <output id="frame-api-message" class="field-message" aria-live="polite">Connect the encoder to start the story.</output>
+                    </div>
+                    <div class="unicorn-stage">
+                        <canvas id="frame-api-preview" width="320" height="180" aria-label="Current unicorn story frame"></canvas>
+                        <video id="frame-api-output-video" class="frame-api-output" controls muted playsinline hidden></video>
+                    </div>
+                    <wa-details class="frame-api-calls" summary="API calls" open>
+                        <div id="frame-api-calls" class="api-call-list wa-stack wa-gap-2xs" aria-live="polite"></div>
+                    </wa-details>
+                </wa-card>
+            </section>
+
+            <section id="setup" class="setup-grid wa-grid wa-gap-m" aria-label="Frame stream configuration">
+                <wa-card class="setup-card">
+                    <h2 slot="header">Encoding to MP4</h2>
+                    <div class="wa-grid wa-gap-m setup-fields">
+                        <wa-select id="video-source-input" label="Source video" value="contemplation">
+                            <wa-option value="contemplation">Contemplation · hero video</wa-option>
+                            <wa-option value="vtt">VTT hero · FPS demo</wa-option>
+                        </wa-select>
+                        <wa-input id="duration-input" label="Duration (seconds)" type="number" min="0.1" max="60" step="0.001" value="10.302"></wa-input>
+                        <wa-select id="frame-rate-input" label="Frames per second" value="30">
+                            <wa-option value="2">2 fps</wa-option>
+                            <wa-option value="5">5 fps</wa-option>
+                            <wa-option value="10">10 fps</wa-option>
+                            <wa-option value="15">15 fps</wa-option>
+                            <wa-option value="30">30 fps</wa-option>
+                            <wa-option value="60">60 fps</wa-option>
+                        </wa-select>
+                        <wa-input id="frame-width-input" label="Capture width" type="number" min="2" max="1920" step="2" value="640"></wa-input>
+                        <wa-input id="frame-height-input" label="Capture height" type="number" min="2" max="1080" step="2" value="534"></wa-input>
+                        <wa-input id="output-width-input" label="Output width" type="number" min="2" max="7680" step="2" placeholder="Capture size"></wa-input>
+                        <wa-input id="output-height-input" label="Output height" type="number" min="2" max="7680" step="2" placeholder="Capture size"></wa-input>
+                        <wa-select id="quality-input" label="Quality" value="medium">
+                            <wa-option value="low">Low</wa-option>
+                            <wa-option value="medium">Medium</wa-option>
+                            <wa-option value="high">High</wa-option>
+                            <wa-option value="very-high">Very high</wa-option>
+                        </wa-select>
+                        <wa-select id="acceleration-input" label="Acceleration" value="no-preference">
+                            <wa-option value="no-preference">Automatic</wa-option>
+                            <wa-option value="prefer-hardware">Prefer hardware</wa-option>
+                            <wa-option value="prefer-software">Prefer software</wa-option>
+                        </wa-select>
+                        <wa-select id="pacing-input" label="Capture pacing" value="real-time">
+                            <wa-option value="real-time">Real time</wa-option>
+                            <wa-option value="step">As fast as possible</wa-option>
+                        </wa-select>
+                    </div>
+                    <div class="source-inline" aria-label="Source video">
+                        <h3><span class="step-number">01</span> Source video</h3>
+                        <div class="video-stage">
+                            <video id="source-video" controls muted playsinline preload="metadata">
+                                <source id="source-media" src="assets/contemplation-demo.mp4" type="video/mp4">
+                            </video>
+                            <span id="source-frame-label" class="stage-label">Waiting for capture</span>
+                        </div>
+                        <div class="wa-split metadata-row">
+                            <span id="source-time">00:00.000</span>
+                            <span id="source-credit">Hero contemplation · Pexels 9733919</span>
+                        </div>
+                    </div>
+                    <div slot="footer" class="wa-cluster wa-gap-s wa-align-items-center">
+                        <wa-button id="start-button" variant="brand">
+                            <wa-icon slot="start" name="play"></wa-icon>
+                            Start frame demo
+                        </wa-button>
+                        <wa-button id="stop-button" variant="neutral" appearance="outlined" disabled>
+                            <wa-icon slot="start" name="stop"></wa-icon>
+                            Stop
+                        </wa-button>
+                        <output id="setup-message" class="field-message" aria-live="polite"></output>
+                    </div>
+                </wa-card>
+            </section>
+
+            <section id="pipeline" class="pipeline-grid" aria-label="Frame pipeline">
+                <wa-card class="pipeline-card request-card">
+                    <h2 slot="header"><span class="step-number">02</span> API request</h2>
+                    <div class="request-body wa-stack wa-gap-m">
+                        <div class="request-route wa-stack wa-gap-3xs">
+                            <span class="field-label">Current request</span>
+                            <code id="request-route">POST /encoder/v1/jobs</code>
+                        </div>
+                        <div class="request-preview">
+                            <canvas id="request-frame-preview" aria-label="Current captured frame"></canvas>
+                        </div>
+                        <div class="request-stats wa-grid wa-gap-s">
+                            <div><span class="field-label">Frames</span><strong id="frame-counter">0 / 0</strong></div>
+                            <div><span class="field-label">Phase</span><strong id="phase-label">Idle</strong></div>
+                            <div><span class="field-label">Progress</span><strong id="progress-label">0%</strong></div>
+                            <div><span class="field-label">Response</span><strong id="response-label">—</strong></div>
+                        </div>
+                        <wa-progress-bar id="demo-progress" value="0" label="Frame pipeline progress"></wa-progress-bar>
+                        <pre id="request-log" class="request-log" tabindex="0" aria-live="polite">Waiting for the stream to start…</pre>
+                    </div>
+                </wa-card>
+
+                <wa-card id="result" class="pipeline-card target-card">
+                    <h2 slot="header"><span class="step-number">03</span> Target video</h2>
+                    <div id="target-placeholder" class="target-placeholder wa-stack wa-gap-xs wa-align-items-center">
+                        <wa-icon name="film" label="Encoded target waiting"></wa-icon>
+                        <strong>Waiting for encoded output</strong>
+                        <span>The target appears here after the last frame is encoded.</span>
+                    </div>
+                    <div class="video-stage target-stage" hidden>
+                        <video id="target-video" controls muted playsinline preload="metadata"></video>
+                        <span class="stage-label">Encoded MP4 · real-time playback</span>
+                    </div>
+                    <div class="wa-split metadata-row">
+                        <span id="target-time">00:00.000</span>
+                        <span id="target-status">Not encoded</span>
+                    </div>
+                </wa-card>
+            </section>
+
+        </div>
+    </main>
+
+    <wa-dialog id="frame-gallery-dialog" label="Generated unicorn frames">
+        <div class="frame-gallery-dialog-content wa-stack wa-gap-m">
+            <p class="field-message">Browse the generated story frames. The viewer keeps two frames per row and scrolls independently.</p>
+            <div id="frame-gallery" class="frame-gallery-grid" aria-live="polite">
+                <p class="frame-gallery-empty">No generated frames yet. Start the unicorn frame demo to populate the viewer.</p>
+            </div>
+        </div>
+        <wa-button slot="footer" variant="brand" data-dialog="close">Close</wa-button>
+    </wa-dialog>
+
+</wa-page>
+</body>
+</html>
